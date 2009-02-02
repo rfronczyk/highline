@@ -94,7 +94,7 @@ class TestHighLine < Test::Unit::TestCase
     end
     assert_equal(languages.last, answer)
     assert_equal( "What is your favorite programming language?  " +
-                  "You must choose one of [:Perl, :Python, :Ruby].\n" +
+                  "You must choose from [:Perl, :Python, :Ruby].\n" +
                   "?  ", @output.string )
   end
   
@@ -593,7 +593,7 @@ class TestHighLine < Test::Unit::TestCase
     assert_equal(:generate, answer)
     assert_equal( "Select a mode:  " +
                   "Ambiguous choice.  " +
-                  "Please choose one of [:generate, :gentle].\n" +
+                  "Please choose from [:generate, :gentle].\n" +
                   "?  ", @output.string )
   end
   

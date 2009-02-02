@@ -35,7 +35,8 @@ class HighLine
       # initialize instance data
       @question    = question
       @answer_type = answer_type
-      
+
+      @many_answers = nil
       @character    = nil
       @limit        = nil
       @echo         = true
@@ -61,7 +62,8 @@ class HighLine
       # finalize responses based on settings
       build_responses
     end
-    
+
+
     # The ERb template of the question to be asked.
     attr_accessor :question
     # The type that will be used to convert this answer.
@@ -76,6 +78,10 @@ class HighLine
     # ignored when using the <tt>:getc</tt> method.  
     # 
     attr_accessor :character
+    #
+    # Allows you to read many answers
+    #
+    attr_accessor :many_answers
     #
     # Allows you to set a character limit for input.
     # 
@@ -225,13 +231,13 @@ class HighLine
       append_default unless default.nil?
       @responses = { :ambiguous_completion =>
                        "Ambiguous choice.  " +
-                       "Please choose one of #{@answer_type.inspect}.",
+                       "Please choose from #{@answer_type.inspect}.",
                      :ask_on_error         =>
                        "?  ",
                      :invalid_type         =>
                        "You must enter a valid #{@answer_type}.",
                      :no_completion        =>
-                       "You must choose one of " +
+                       "You must choose from " +
                        "#{@answer_type.inspect}.",
                      :not_in_range         =>
                        "Your answer isn't within the expected range " +
@@ -270,63 +276,17 @@ class HighLine
       end
     end
 
-    #
-    # Transforms the given _answer_string_ into the expected type for this
-    # Question.  Currently supported conversions are:
-    #
-    # <tt>[...]</tt>::         Answer must be a member of the passed Array. 
-    #                          Auto-completion is used to expand partial
-    #                          answers.
-    # <tt>lambda {...}</tt>::  Answer is passed to lambda for conversion.
-    # Date::                   Date.parse() is called with answer.
-    # DateTime::               DateTime.parse() is called with answer.
-    # File::                   The entered file name is auto-completed in 
-    #                          terms of _directory_ + _glob_, opened, and
-    #                          returned.
-    # Float::                  Answer is converted with Kernel.Float().
-    # Integer::                Answer is converted with Kernel.Integer().
-    # +nil+::                  Answer is left in String format.  (Default.)
-    # Pathname::               Same as File, save that a Pathname object is
-    #                          returned.
-    # String::                 Answer is converted with Kernel.String().
-    # Regexp::                 Answer is fed to Regexp.new().
-    # Symbol::                 The method to_sym() is called on answer and
-    #                          the result returned.
-    # <i>any other Class</i>:: The answer is passed on to
-    #                          <tt>Class.parse()</tt>.
-    #
-    # This method throws ArgumentError, if the conversion cannot be
-    # completed for any reason.
-    # 
+    # This method converts answers to proper type
     def convert( answer_string )
-      if @answer_type.nil?
-        answer_string
-      elsif [Float, Integer, String].include?(@answer_type)
-        Kernel.send(@answer_type.to_s.to_sym, answer_string)
-      elsif @answer_type == Symbol
-        answer_string.to_sym
-      elsif @answer_type == Regexp
-        Regexp.new(answer_string)
-      elsif @answer_type.is_a?(Array) or [File, Pathname].include?(@answer_type)
-        # cheating, using OptionParser's Completion module
-        choices = selection
-        choices.extend(OptionParser::Completion)
-        answer = choices.complete(answer_string)
-        if answer.nil?
-          raise NoAutoCompleteMatch
+      if @many_answers
+        answer = []
+        answer_string.split.each do | single_answer |
+          answer << convert_single_answer(single_answer)
         end
-        if @answer_type.is_a?(Array)
-          answer.last
-        elsif @answer_type == File
-          File.open(File.join(@directory.to_s, answer.last))
-        else
-          Pathname.new(File.join(@directory.to_s, answer.last))
-        end
-      elsif [Date, DateTime].include?(@answer_type) or @answer_type.is_a?(Class)
-        @answer_type.parse(answer_string)
-      elsif @answer_type.is_a?(Proc)
-        @answer_type[answer_string]
+      else
+        answer = convert_single_answer(answer_string)
       end
+      answer        
     end
 
     # Returns a english explination of the current range settings.
@@ -364,9 +324,16 @@ class HighLine
     # are not checked.
     #
     def in_range?( answer_object )
-      (@above.nil? or answer_object > @above) and
-      (@below.nil? or answer_object < @below) and
-      (@in.nil? or @in.include?(answer_object))
+      if !@many_answers
+        answer_object = [answer_object]
+      end
+      answer_object.each do | single_answer_object |
+        return false unless
+          (@above.nil? or single_answer_object > @above) and
+          (@below.nil? or single_answer_object < @below) and
+          (@in.nil? or @in.include?(single_answer_object))
+      end
+      return true
     end
     
     #
@@ -435,12 +402,82 @@ class HighLine
     # and case handling.
     #
     def valid_answer?( answer_string )
-      @validate.nil? or 
-      (@validate.is_a?(Regexp) and answer_string =~ @validate) or
-      (@validate.is_a?(Proc)   and @validate[answer_string])
+      return true if @validate.nil?
+      answers = []
+      if @many_answers
+        answers = answer_string.split
+      else
+        answers << answer_string
+      end
+      answers.each do |single_answer_string|
+        return false unless 
+          (@validate.is_a?(Regexp) and single_answer_string =~ @validate) or
+          (@validate.is_a?(Proc)   and @validate[single_answer_string])
+      end
+      return true
     end
     
     private
+
+    # Convert single answer
+    # Transforms the given _answer_string_ into the expected type for this
+    # Question.  Currently supported conversions are:
+    #
+    # <tt>[...]</tt>::         Answer must be a member of the passed Array. 
+    #                          Auto-completion is used to expand partial
+    #                          answers.
+    # <tt>lambda {...}</tt>::  Answer is passed to lambda for conversion.
+    # Date::                   Date.parse() is called with answer.
+    # DateTime::               DateTime.parse() is called with answer.
+    # File::                   The entered file name is auto-completed in 
+    #                          terms of _directory_ + _glob_, opened, and
+    #                          returned.
+    # Float::                  Answer is converted with Kernel.Float().
+    # Integer::                Answer is converted with Kernel.Integer().
+    # +nil+::                  Answer is left in String format.  (Default.)
+    # Pathname::               Same as File, save that a Pathname object is
+    #                          returned.
+    # String::                 Answer is converted with Kernel.String().
+    # Regexp::                 Answer is fed to Regexp.new().
+    # Symbol::                 The method to_sym() is called on answer and
+    #                          the result returned.
+    # <i>any other Class</i>:: The answer is passed on to
+    #                          <tt>Class.parse()</tt>.
+    #
+    # This method throws ArgumentError, if the conversion cannot be
+    # completed for any reason.
+    #
+
+    def convert_single_answer( answer_string )
+      if @answer_type.nil?
+        answer_string
+      elsif [Float, Integer, String].include?(@answer_type)
+        Kernel.send(@answer_type.to_s.to_sym, answer_string)
+      elsif @answer_type == Symbol
+        answer_string.to_sym
+      elsif @answer_type == Regexp
+        Regexp.new(answer_string)
+      elsif @answer_type.is_a?(Array) or [File, Pathname].include?(@answer_type)
+        # cheating, using OptionParser's Completion module
+        choices = selection
+        choices.extend(OptionParser::Completion)
+        answer = choices.complete(answer_string)
+        if answer.nil?
+          raise NoAutoCompleteMatch
+        end
+        if @answer_type.is_a?(Array)
+          answer.last
+        elsif @answer_type == File
+          File.open(File.join(@directory.to_s, answer.last))
+        else
+          Pathname.new(File.join(@directory.to_s, answer.last))
+        end
+      elsif [Date, DateTime].include?(@answer_type) or @answer_type.is_a?(Class)
+        @answer_type.parse(answer_string)
+      elsif @answer_type.is_a?(Proc)
+        @answer_type[answer_string]
+      end
+    end
     
     #
     # Adds the default choice to the end of question between <tt>|...|</tt>.

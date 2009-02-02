@@ -578,10 +578,17 @@ class HighLine
       say(@question)
       question = @output.string
       @output  = old_output
-      
+
       # prep auto-completion
-      completions              = @question.selection.abbrev
-      Readline.completion_proc = lambda { |string| completions[string] }
+      # I found this version in plugin
+      # The previous version wasn`t warking properly, readline wasn`t
+      # showing possible answers if you push tab 2 times
+      Readline.completion_proc = lambda do |string|
+        @question.selection.grep(/\A#{Regexp.escape(string)}/)
+      end
+      
+      
+
       
       # work-around ugly readline() warnings
       old_verbose = $VERBOSE
