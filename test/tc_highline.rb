@@ -820,4 +820,12 @@ class TestHighLine < Test::Unit::TestCase
     assert(HighLine::VERSION.frozen?)
     assert_match(/\A\d\.\d\.\d\Z/, HighLine::VERSION)
   end
+
+  def test_ask_with_mane_answers
+    answer = "Rob Bob Chris Ralf"
+    @input << answer
+    @input.rewind
+
+    assert_equal answer.split, @terminal.ask("Who do you like ?", answer.split) {|q| q.many_answers = true}
+  end
 end
