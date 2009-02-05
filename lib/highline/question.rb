@@ -256,8 +256,7 @@ class HighLine
                        "Your answer isn't within the expected range " +
                        "(#{expected_range}).",
                      :not_valid            =>
-                       "Your answer isn't valid (must match " +
-                       "#{@validate.inspect})." }.merge(@responses)
+                       "Your answer isn't valid" + (@validate.is_a?(Regexp) ? " (must match #{@validate.inspect})." : "") }.merge(@responses)
       ### WARNING:  This code is quasi-duplicated in     ###
       ### Menu.update_responses().  Check there too when ###
       ### making changes!                                ###
