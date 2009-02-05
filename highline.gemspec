@@ -1,14 +1,3 @@
-Gem::Specification.new do |s|
-  s.name = "highline"
-  s.version = "1.5.2"
-  s.authors = ["James Edward Gray II", "Gregory Brown", "Rafal Fronczyk"]
-  s.summary = "My version of highline gem"
-  s.files = ['COPYING', 'AUTHORS', 'INSTALL', 'LICENSE', 'Rakefile', 'README', 'setup.rb'] + Dir['lib/**/*.rb'] + Dir['test/*.rb'] + Dir['examples/*.rb']
-end
-
-
-
-
 Gem::Specification.new do |spec|
   spec.name     = "highline"
   spec.version  = "1.5.3"
