@@ -19,8 +19,12 @@ class HighLine
   # process is handled according to the users wishes.
   #
   class Question
-    # An internal HighLine error.  User code does not need to trap this.
+    # An internal HighLine errors.  User code does not need to trap this.
     class NoAutoCompleteMatch < StandardError
+      # do nothing, just creating a unique error type
+    end
+
+    class NotEnoughAnswers < StandardError
       # do nothing, just creating a unique error type
     end
 
@@ -37,6 +41,7 @@ class HighLine
       @answer_type = answer_type
 
       @many_answers = nil
+      @at_least     = 1
       @character    = nil
       @limit        = nil
       @echo         = true
@@ -81,12 +86,18 @@ class HighLine
     #
     # Allows you to read many answers
     #
-    attr_accessor :many_answers
-    #
-    # Allows you to set a character limit for input.
     # 
     # *WARNING*:  This option forces a character by character read.
     # 
+    attr_accessor :many_answers
+    #
+    # Allows you to set a character limit for input.
+    #
+    attr_accessor :at_least
+    #
+    # Specify minimum number of answers that user has to give. It
+    # should be used only with :many_answers = true
+    #
     attr_accessor :limit
     #
     # Can be set to +true+ or +false+ to control whether or not input will
@@ -239,6 +250,8 @@ class HighLine
                      :no_completion        =>
                        "You must choose from " +
                        "#{@answer_type.inspect}.",
+                     :not_enough_answers  =>
+                       "You must give at least #{@at_least} answers",
                      :not_in_range         =>
                        "Your answer isn't within the expected range " +
                        "(#{expected_range}).",
@@ -282,6 +295,9 @@ class HighLine
         answer = []
         answer_string.split.each do | single_answer |
           answer << convert_single_answer(single_answer)
+        end
+        if answer.size < @at_least
+          raise NotEnoughAnswers
         end
       else
         answer = convert_single_answer(answer_string)

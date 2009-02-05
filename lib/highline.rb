@@ -253,6 +253,9 @@ class HighLine
     rescue Question::NoAutoCompleteMatch
       explain_error(:no_completion)
       retry
+    rescue Question::NotEnoughAnswers
+      explain_error(:not_enough_answers)
+      retry
     rescue NameError
       raise if $!.is_a?(NoMethodError)
       explain_error(:ambiguous_completion)
