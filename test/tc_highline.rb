@@ -828,4 +828,12 @@ class TestHighLine < Test::Unit::TestCase
 
     assert_equal answer.split, @terminal.ask("Who do you like ?", answer.split) {|q| q.many_answers = true}
   end
+
+  def test_ask_with_declared_actions
+    @input << "5"
+    @input.rewind
+    answer = @terminal.ask("Whats my facourite number ?", [1,2,3,4], {:no_completion => Proc.new {return 5}})
+
+    assert_equal answer, 5
+  end
 end

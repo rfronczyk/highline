@@ -196,6 +196,8 @@ class HighLine
   # handled.  See HighLine.say() for details on the format of _question_, and
   # HighLine::Question for more information about _answer_type_ and what's
   # valid in the code block.
+  # actions is a hash with proc or lambdas which will be called on errors,
+  # default action is explain_error. Type of error and answer are send to the action. 
   # 
   # If <tt>@question</tt> is set before ask() is called, parameters are
   # ignored and that object (must be a HighLine::Question) is used to drive
@@ -203,7 +205,9 @@ class HighLine
   # 
   # Raises EOFError if input is exhausted.
   #
-  def ask( question, answer_type = String, &details ) # :yields: question
+  def ask( question, answer_type = String, actions = Hash.new, &details ) # :yields: question
+    actions.default = Proc.new { |error, answer| explain_error(error) }
+    
     @question ||= Question.new(question, answer_type, &details)
     
     return gather if @question.gather
@@ -242,23 +246,23 @@ class HighLine
         
         @answer
       else
-        explain_error(:not_in_range)
+        actions[:not_in_range].call(:not_in_range, @answer)
         raise QuestionError
       end
     rescue QuestionError
       retry
     rescue ArgumentError
-      explain_error(:invalid_type)
+      actions[:invalid_type].call(:invalid_type, @answer)
       retry
     rescue Question::NoAutoCompleteMatch
-      explain_error(:no_completion)
+      actions[:no_completion].call(:no_completion, @answer)
       retry
     rescue Question::NotEnoughAnswers
-      explain_error(:not_enough_answers)
+      actions[:not_enough_answers].call(:not_enough_answers, @answer)
       retry
     rescue NameError
       raise if $!.is_a?(NoMethodError)
-      explain_error(:ambiguous_completion)
+      actions[:ambiguous_completion].call(:ambiguous_completion, @answer)
       retry
     ensure
       @question = nil    # Reset Question object.
