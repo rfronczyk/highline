@@ -29,7 +29,7 @@ require "abbrev"
 #
 class HighLine
   # The version of the installed library.
-  VERSION = "1.5.7".freeze
+  VERSION = "1.5.8".freeze
   
   # An internal HighLine error.  User code does not need to trap this.
   class QuestionError < StandardError
@@ -197,7 +197,8 @@ class HighLine
   # HighLine::Question for more information about _answer_type_ and what's
   # valid in the code block.
   # actions is a hash with proc or lambdas which will be called on errors,
-  # default action is explain_error. Type of error and answer are send to the action. 
+  # default action is explain_error. Type of error, answer, and
+  # default action are send to the action. 
   # 
   # If <tt>@question</tt> is set before ask() is called, parameters are
   # ignored and that object (must be a HighLine::Question) is used to drive
@@ -206,7 +207,7 @@ class HighLine
   # Raises EOFError if input is exhausted.
   #
   def ask( question, answer_type = String, actions = Hash.new, &details ) # :yields: question
-    actions.default = Proc.new { |error, answer| explain_error(error) }
+    actions.default = Proc.new { |error, answer, default_action| explain_error(error) } unless actions.default
     
     @question ||= Question.new(question, answer_type, &details)
     
@@ -246,23 +247,23 @@ class HighLine
         
         @answer
       else
-        actions[:not_in_range].call(:not_in_range, @answer)
+        actions[:not_in_range].call(:not_in_range, @answer, actions.default)
         raise QuestionError
       end
     rescue QuestionError
       retry
     rescue ArgumentError
-      actions[:invalid_type].call(:invalid_type, @answer)
+      actions[:invalid_type].call(:invalid_type, @answer, actions.default)
       retry
     rescue Question::NoAutoCompleteMatch
-      actions[:no_completion].call(:no_completion, @answer)
+      actions[:no_completion].call(:no_completion, @answer, actions.default)
       retry
     rescue Question::NotEnoughAnswers
-      actions[:not_enough_answers].call(:not_enough_answers, @answer)
+      actions[:not_enough_answers].call(:not_enough_answers, @answer, actions.default)
       retry
     rescue NameError
       raise if $!.is_a?(NoMethodError)
-      actions[:ambiguous_completion].call(:ambiguous_completion, @answer)
+      actions[:ambiguous_completion].call(:ambiguous_completion, @answer, actions.default)
       retry
     ensure
       @question = nil    # Reset Question object.

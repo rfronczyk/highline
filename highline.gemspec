@@ -1,6 +1,6 @@
 Gem::Specification.new do |spec|
   spec.name     = "highline"
-  spec.version  = "1.5.7"
+  spec.version  = "1.5.8"
   spec.platform = Gem::Platform::RUBY
   spec.summary  = "HighLine is a high-level command-line IO library."
   spec.files    = Dir.glob("{examples,lib,test}/**/*.rb").
