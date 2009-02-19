@@ -1,10 +1,14 @@
 Gem::Specification.new do |spec|
   spec.name     = "highline"
-  spec.version  = "1.5.9"
+  spec.version  = "1.5.10"
   spec.platform = Gem::Platform::RUBY
   spec.summary  = "HighLine is a high-level command-line IO library."
-  spec.files    = (Dir["lib/**/*.rb"] + Dir["examples/*.rb"] + Dir["test/*.rb"]).
-                  delete_if { |item| item.include?("CVS") } + ["Rakefile", "setup.rb"]
+  spec.files    = ["Rakefile", "setup.rb", "LICENSE", "INSTALL", "CHANGELOG", "README", "TODO", "examples/ansi_colors.rb", "examples/basic_usage.rb",
+                   "examples/menus.rb", "examples/page_and_wrap.rb", "examples/trapping_eof.rb", "examples/asking_for_arrays.rb",
+                   "examples/color_scheme.rb", "examples/overwrite.rb", "examples/password.rb", "examples/using_readline.rb", "lib/highline.rb",
+                   "lib/many_answers.rb", "lib/highline/color_scheme.rb", "lib/highline/import.rb", "lib/highline/menu.rb", "lib/highline/question.rb",
+                   "lib/highline/system_extensions.rb", "test/tc_color_scheme.rb", "test/tc_highline.rb", "test/tc_import.rb", "test/tc_menu.rb",
+                  "test/ts_all.rb"]
 
   spec.test_files  =  "test/ts_all.rb"
   spec.has_rdoc         =  true
