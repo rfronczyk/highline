@@ -818,7 +818,7 @@ class TestHighLine < Test::Unit::TestCase
     assert_not_nil(HighLine::VERSION)
     assert_instance_of(String, HighLine::VERSION)
     assert(HighLine::VERSION.frozen?)
-    assert_match(/\A\d\.\d\.\d\Z/, HighLine::VERSION)
+    assert_match(/\d\.\d\.\d/, HighLine::VERSION)
   end
 
   def test_ask_with_mane_answers

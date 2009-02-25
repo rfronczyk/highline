@@ -29,10 +29,14 @@ require "abbrev"
 #
 class HighLine
   # The version of the installed library.
-  VERSION = "1.5.8".freeze
+  VERSION = "1.5.9".freeze
   
   # An internal HighLine error.  User code does not need to trap this.
   class QuestionError < StandardError
+    # do nothing, just creating a unique error type
+  end
+
+  class InvalidAnswerError < StandardError
     # do nothing, just creating a unique error type
   end
   
@@ -220,8 +224,7 @@ class HighLine
     begin
       @answer = @question.answer_or_default(get_response)
       unless @question.valid_answer?(@answer)
-        explain_error(:not_valid)
-        raise QuestionError
+        raise InvalidAnswerError
       end
       
       @answer = @question.convert(@answer)
@@ -251,6 +254,9 @@ class HighLine
         raise QuestionError
       end
     rescue QuestionError
+      retry
+    rescue InvalidAnswerError
+      actions[:not_valid].call(:not_valid, @answer, actions.default)
       retry
     rescue ArgumentError
       actions[:invalid_type].call(:invalid_type, @answer, actions.default)
